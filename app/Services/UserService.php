@@ -4,7 +4,12 @@ declare(strict_types=1);
 namespace App\Services;
 
 
+use App\Filters\AddressFilter;
+use App\Filters\NameFilter;
+use App\Filters\PhoneFilter;
 use App\Models\User;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Pipeline\Pipeline;
 
 /**
  * Class UserService
@@ -15,16 +20,27 @@ class UserService
 {
     public function listUsers()
     {
-        $name = request()->get('name');
-        $phone = request()->get('phone');
-        $address = request()->get('address');
+        return $this->filterParams(
+            User::with('role')
+        )->get();
+    }
 
-        return User::with('role')->when($name, function ($query, $name) {
-            $query->where('name', 'LIKE', '%' . strtolower($name) . '%');
-        })->when($phone, function ($query, $phone) {
-            $query->where('phone', 'LIKE', '%' . $phone . '%');
-        })->when($address, function ($query, $address) {
-            $query->where('address', 'LIKE', '%' . strtolower($address) . '%');
-        })->cursor();
+    /**
+     * @param Builder $query
+     * @param array $filters
+     * @return mixed
+     */
+    protected function filterParams(Builder $query, array $filters = []): mixed
+    {
+        //add more filters here
+        $filters = !empty($filters) ? [...$filters] : [
+            NameFilter::class,
+            PhoneFilter::class,
+            AddressFilter::class,
+        ];
+
+        return app(Pipeline::class)->send($query)
+            ->through($filters)
+            ->then(fn($query) => $query);
     }
 }
