@@ -15,6 +15,6 @@ class UserService
 {
     public function listUsers()
     {
-        return User::cursor();
+        return User::with('role')->cursor();
     }
 }
