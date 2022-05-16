@@ -23,4 +23,5 @@ Route::middleware('auth:api')->group(function () {
 
 });
 
+//http://127.0.0.1:7000/api/users?name=&phone=880&address=ayana
 Route::get('users', ListUserController::class);
